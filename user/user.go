@@ -22,8 +22,8 @@ type (
 	}
 )
 
-//SetConnection ... new connection
-func SetConnection(db *sql.DB) *UserModel {
+//NewUserModel ... new NewUserModel
+func NewUserModel(db *sql.DB) *UserModel {
 	return &UserModel{
 		db: db,
 	}
@@ -80,4 +80,20 @@ func (u *UserModel) GetAll() ([]User, error) {
 	}
 
 	return users, nil
+}
+
+//Create ... Create user with user struc
+// return int64
+func (u *UserModel) Create(user User) (int64, error) {
+
+	res, err := u.db.Exec("INSERT INTO users(username, password) VALUES (?, ?)", user.Username, user.Password)
+
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
 }

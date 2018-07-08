@@ -20,7 +20,7 @@ func TestGetUserByIDFromDB(t *testing.T) {
 
 	mock.ExpectQuery(sql).WillReturnRows(rows)
 
-	um := SetConnection(db)
+	um := NewUserModel(db)
 	u := um.GetUserByID(1)
 	expect := User{
 		ID:       1,
@@ -30,22 +30,29 @@ func TestGetUserByIDFromDB(t *testing.T) {
 
 }
 
-func TestGetUserAllFromDB(t *testing.T) {
+func TestCreateUser(t *testing.T) {
+	//with golang test without assert test framework
 	db, mock, err := sqlmock.New()
 	if err != nil {
-		fmt.Println("err")
-		return
+		t.Errorf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	result := sqlmock.NewResult(1, 1)
+	mock.ExpectExec("^INSERT INTO users").
+		WithArgs("foo", "foopass").
+		WillReturnResult(result)
+
+	//res, err := db.Exec("INSERT INTO users (username,password) VALUES (?,?)", "foo", "foopass")
+	um := NewUserModel(db)
+	id, err := um.Create(User{Username: "foo", Password: "foopass"})
+
+	if id != 1 {
+		t.Errorf("expected last insert id to be 1, but got %d instead", id)
 	}
 
-	rows := sqlmock.NewRows([]string{"id", "username", "password"}).AddRow(1, "foo", "pw").AddRow(2, "bar", "pw")
-	sql := `select (.*) from users`
-
-	mock.ExpectQuery(sql).WillReturnRows(rows)
-
-	um := SetConnection(db)
-	u, _ := um.GetAll()
-	expect := []User{{ID: 1, Username: "foo", Password: "pw"}, {ID: 2, Username: "bar", Password: "pw"}}
-
-	assert.Equal(t, expect, u)
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
 
 }
