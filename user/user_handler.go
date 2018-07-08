@@ -32,3 +32,19 @@ func (h *Handler) GetAll(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, u)
 }
+
+//Create ... Create Handler
+func (h *Handler) Create(c echo.Context) error {
+
+	u := new(User)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	id, err := h.UserModelInterface.Create(*u)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "")
+	}
+	return c.JSON(http.StatusOK, id)
+
+}

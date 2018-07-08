@@ -3,6 +3,7 @@ package user
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/labstack/echo"
@@ -31,6 +32,10 @@ func (u *UsersModelStub) GetAll() ([]User, error) {
 		Username: "bar",
 		Password: "pw",
 	}}, nil
+}
+
+func (u *UsersModelStub) Create(user User) (int64, error) {
+	return 1, nil
 }
 
 func TestGetUserByID(t *testing.T) {
@@ -68,5 +73,24 @@ func TestGetAllUser(t *testing.T) {
 	if assert.NoError(t, h.GetAll(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, userJSON, rec.Body.String())
+	}
+}
+
+func TestCreateUserHandler(t *testing.T) {
+	var userJSON = `{"username":"foo","password":"pw"}`
+
+	e := echo.New()
+	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(userJSON))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetPath("/users")
+
+	u := &UsersModelStub{}
+	h := NewHandler(u)
+
+	if assert.NoError(t, h.Create(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "1", rec.Body.String())
 	}
 }

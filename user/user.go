@@ -9,6 +9,7 @@ type (
 	UserModelInterface interface {
 		GetUserByID(id int) User
 		GetAll() ([]User, error)
+		Create(u User) (int64, error)
 	}
 
 	User struct {
