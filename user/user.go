@@ -22,8 +22,8 @@ type (
 	}
 )
 
-//NewUserModel ... new connection
-func NewUserModel(db *sql.DB) *UserModel {
+//SetConnection ... new connection
+func SetConnection(db *sql.DB) *UserModel {
 	return &UserModel{
 		db: db,
 	}

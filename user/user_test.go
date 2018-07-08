@@ -20,7 +20,7 @@ func TestGetUserByIDFromDB(t *testing.T) {
 
 	mock.ExpectQuery(sql).WillReturnRows(rows)
 
-	um := NewUserModel(db)
+	um := SetConnection(db)
 	u := um.GetUserByID(1)
 	expect := User{
 		ID:       1,
@@ -42,7 +42,7 @@ func TestGetUserAllFromDB(t *testing.T) {
 
 	mock.ExpectQuery(sql).WillReturnRows(rows)
 
-	um := NewUserModel(db)
+	um := SetConnection(db)
 	u, _ := um.GetAll()
 	expect := []User{{ID: 1, Username: "foo", Password: "pw"}, {ID: 2, Username: "bar", Password: "pw"}}
 

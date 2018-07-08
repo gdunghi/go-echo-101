@@ -7,21 +7,25 @@ import (
 	"github.com/labstack/echo"
 )
 
-type handler struct {
+// Handler ... for test
+type Handler struct {
 	UserModelInterface
 }
 
-func NewHandler(u UserModelInterface) *handler {
-	return &handler{u}
+//NewHandler ... return handler
+func NewHandler(u UserModelInterface) *Handler {
+	return &Handler{u}
 }
 
-func (h *handler) GetUserByID(c echo.Context) error {
+//GetUserByID ... GetUserByID
+func (h *Handler) GetUserByID(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
 	u := h.UserModelInterface.GetUserByID(id)
 	return c.JSON(http.StatusOK, u)
 }
 
-func (h *handler) GetAllUsers(c echo.Context) error {
+//GetAll ... GetAll
+func (h *Handler) GetAll(c echo.Context) error {
 	u, err := h.UserModelInterface.GetAll()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "")

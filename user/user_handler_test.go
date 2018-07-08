@@ -65,7 +65,7 @@ func TestGetAllUser(t *testing.T) {
 
 	var userJSON = `[{"id":1,"username":"foo","password":"pw"},{"id":2,"username":"bar","password":"pw"}]`
 
-	if assert.NoError(t, h.GetAllUsers(c)) {
+	if assert.NoError(t, h.GetAll(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, userJSON, rec.Body.String())
 	}

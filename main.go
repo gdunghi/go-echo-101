@@ -10,12 +10,12 @@ func main() {
 
 	e := echo.New()
 
-	d := db.DBConnect()
+	c := db.DBConnect()
 
-	uh := user.NewHandler(user.NewUserModel(d))
+	uh := user.NewHandler(user.SetConnection(c))
 
 	e.GET("/users/:id", uh.GetUserByID)
-	e.GET("/users", uh.GetAllUsers)
+	e.GET("/users", uh.GetAll)
 
 	e.Logger.Fatal(e.Start(":1324"))
 }
