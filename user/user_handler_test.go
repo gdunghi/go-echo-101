@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,18 +12,19 @@ import (
 )
 
 type (
-	UsersModelStub struct{}
+	UserRepositorySuccess struct{}
+	UserRepositoryFail    struct{}
 )
 
-func (u *UsersModelStub) GetUserByID(id int) User {
+func (u *UserRepositorySuccess) GetUserByID(id int) (User, error) {
 	return User{
 		ID:       1,
 		Username: "foo",
 		Password: "pw",
-	}
+	}, nil
 }
 
-func (u *UsersModelStub) GetAll() ([]User, error) {
+func (u *UserRepositorySuccess) GetAll() ([]User, error) {
 	return []User{{
 		ID:       1,
 		Username: "foo",
@@ -34,9 +36,15 @@ func (u *UsersModelStub) GetAll() ([]User, error) {
 	}}, nil
 }
 
-func (u *UsersModelStub) Create(user User) (int64, error) {
+func (u *UserRepositorySuccess) Create(user User) (int64, error) {
 	return 1, nil
 }
+
+func (u *UserRepositoryFail) GetUserByID(id int) (User, error) { return User{}, errors.New("") }
+
+func (u *UserRepositoryFail) GetAll() ([]User, error) { return nil, errors.New("") }
+
+func (u *UserRepositoryFail) Create(user User) (int64, error) { return 0, errors.New("") }
 
 func TestGetUserByID(t *testing.T) {
 	e := echo.New()
@@ -47,7 +55,7 @@ func TestGetUserByID(t *testing.T) {
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	u := &UsersModelStub{}
+	u := &UserRepositorySuccess{}
 	h := NewHandler(u)
 
 	var userJSON = `{"id":1,"username":"foo","password":"pw"}`
@@ -58,6 +66,38 @@ func TestGetUserByID(t *testing.T) {
 	}
 }
 
+func TestGetUserByIDErrorShouldReturnHttp500(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(echo.GET, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetPath("/users/:id")
+	c.SetParamNames("id")
+	c.SetParamValues("1")
+
+	u := &UserRepositoryFail{}
+	h := NewHandler(u)
+
+	h.GetUserByID(c)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}
+
+func TestGetUserByIDShouldReturnHttp400WhenIdIsEMPTY(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(echo.GET, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetPath("/users/:id")
+
+	u := &UserRepositorySuccess{}
+	h := NewHandler(u)
+
+	h.GetUserByID(c)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
 func TestGetAllUser(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(echo.GET, "/", nil)
@@ -65,7 +105,7 @@ func TestGetAllUser(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath("/users")
 
-	u := &UsersModelStub{}
+	u := &UserRepositorySuccess{}
 	h := NewHandler(u)
 
 	var userJSON = `[{"id":1,"username":"foo","password":"pw"},{"id":2,"username":"bar","password":"pw"}]`
@@ -76,21 +116,55 @@ func TestGetAllUser(t *testing.T) {
 	}
 }
 
-func TestCreateUserHandler(t *testing.T) {
-	var userJSON = `{"username":"foo","password":"pw"}`
-
+func TestGetAllUserShouldReturnHttp500WhenError(t *testing.T) {
 	e := echo.New()
-	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(userJSON))
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req := httptest.NewRequest(echo.GET, "/", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	c.SetPath("/users")
 
-	u := &UsersModelStub{}
+	u := &UserRepositoryFail{}
+	h := NewHandler(u)
+	h.GetAll(c)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}
+
+func TestCreateUserHandler(t *testing.T) {
+	var userJSON = `{"username":"foo","password":"pw"}`
+	c, rec := newTestContextWithPost("/users", userJSON)
+	u := &UserRepositorySuccess{}
 	h := NewHandler(u)
 
 	if assert.NoError(t, h.Create(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, "1", rec.Body.String())
 	}
+}
+
+func TestCreateUserHandler_expect_internalServerError(t *testing.T) {
+	var userJSON = `{"username":"foo","password":"pw"}`
+	c, rec := newTestContextWithPost("/users", userJSON)
+	u := &UserRepositoryFail{}
+	h := NewHandler(u)
+	h.Create(c)
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}
+
+func TestCreateUserHandler_expect_badRequest_when_bind_error(t *testing.T) {
+	var userJSON = `{"username":1}`
+	c, rec := newTestContextWithPost("/users", userJSON)
+	u := &UserRepositorySuccess{}
+	h := NewHandler(u)
+	h.Create(c)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func newTestContextWithPost(path, jsonBody string) (echo.Context, *httptest.ResponseRecorder) {
+	e := echo.New()
+	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(jsonBody))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	c.SetPath(path)
+	return c, rec
 }

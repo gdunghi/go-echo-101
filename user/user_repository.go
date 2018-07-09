@@ -7,7 +7,7 @@ import (
 
 type (
 	UserRepositoryInterface interface {
-		GetUserByID(id int) User
+		GetUserByID(id int) (User, error)
 		GetAll() ([]User, error)
 		Create(u User) (int64, error)
 	}
@@ -25,11 +25,12 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 //GetUserByID ...
-func (u *UserRepository) GetUserByID(id int) User {
+func (u *UserRepository) GetUserByID(id int) (User, error) {
 	user := User{}
 	rows, err := u.db.Query("select id, username from users where id=?", id)
 	if err != nil {
 		log.Fatal(err)
+		return user, err
 	}
 	defer rows.Close()
 
@@ -37,15 +38,17 @@ func (u *UserRepository) GetUserByID(id int) User {
 		err := rows.Scan(&user.ID, &user.Username)
 		if err != nil {
 			log.Fatal(err)
+			return user, err
 		}
 		log.Println(user.ID, user.Username)
 	}
 	err = rows.Err()
 	if err != nil {
 		log.Fatal(err)
+		return user, err
 	}
 
-	return user
+	return user, nil
 }
 
 //GetAll ... get all user from DB

@@ -19,8 +19,14 @@ func NewHandler(u UserRepositoryInterface) *Handler {
 
 //GetUserByID ... GetUserByID
 func (h *Handler) GetUserByID(c echo.Context) error {
-	id, _ := strconv.Atoi(c.Param("id"))
-	u := h.UserRepositoryInterface.GetUserByID(id)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "")
+	}
+	u, err := h.UserRepositoryInterface.GetUserByID(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "")
+	}
 	return c.JSON(http.StatusOK, u)
 }
 
@@ -38,7 +44,7 @@ func (h *Handler) Create(c echo.Context) error {
 
 	u := new(User)
 	if err := c.Bind(u); err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, "")
 	}
 	id, err := h.UserRepositoryInterface.Create(*u)
 
