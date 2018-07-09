@@ -12,7 +12,7 @@ func main() {
 
 	c := db.DBConnect()
 
-	uh := user.NewHandler(user.NewUserModel(c))
+	uh := user.NewHandler(user.NewUserRepository(c))
 
 	e.GET("/users/:id", uh.GetUserByID)
 	e.GET("/users", uh.GetAll)

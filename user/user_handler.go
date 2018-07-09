@@ -9,24 +9,24 @@ import (
 
 // Handler ... for test
 type Handler struct {
-	UserModelInterface
+	UserRepositoryInterface
 }
 
 //NewHandler ... return handler
-func NewHandler(u UserModelInterface) *Handler {
+func NewHandler(u UserRepositoryInterface) *Handler {
 	return &Handler{u}
 }
 
 //GetUserByID ... GetUserByID
 func (h *Handler) GetUserByID(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	u := h.UserModelInterface.GetUserByID(id)
+	u := h.UserRepositoryInterface.GetUserByID(id)
 	return c.JSON(http.StatusOK, u)
 }
 
 //GetAll ... GetAll
 func (h *Handler) GetAll(c echo.Context) error {
-	u, err := h.UserModelInterface.GetAll()
+	u, err := h.UserRepositoryInterface.GetAll()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "")
 	}
@@ -40,7 +40,7 @@ func (h *Handler) Create(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-	id, err := h.UserModelInterface.Create(*u)
+	id, err := h.UserRepositoryInterface.Create(*u)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "")

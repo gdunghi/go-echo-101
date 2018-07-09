@@ -20,7 +20,7 @@ func TestGetUserByIDFromDB(t *testing.T) {
 
 	mock.ExpectQuery(sql).WillReturnRows(rows)
 
-	um := NewUserModel(db)
+	um := NewUserRepository(db)
 	u := um.GetUserByID(1)
 	expect := User{
 		ID:       1,
@@ -44,7 +44,7 @@ func TestCreateUser(t *testing.T) {
 		WillReturnResult(result)
 
 	//res, err := db.Exec("INSERT INTO users (username,password) VALUES (?,?)", "foo", "foopass")
-	um := NewUserModel(db)
+	um := NewUserRepository(db)
 	id, err := um.Create(User{Username: "foo", Password: "foopass"})
 
 	if id != 1 {
