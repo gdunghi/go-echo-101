@@ -1,7 +1,2 @@
-pipeline:
-  build:
-    image: golang
-    commands:
-      - go get
-      - go build
-      - go test
+go build ./...
+go run main.go
